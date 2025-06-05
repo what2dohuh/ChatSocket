@@ -25,34 +25,51 @@
 </head>
 <body>
 
-  <h2>🧪 WebSocket Echo Test</h2>
+  <h2>🧪 ChatSocket</h2>
+  <h4>Chat Room: <span id="roomName">general</span></h4>
   <h5 id="online">Online:</h5>
   <div id="messages"></div>
-
-  <input id="messageInput" type="text" placeholder="Type a message..." />
-  <button onclick="sendMessage()">Send</button>
-
+  <div>
+    <input id="messageInput" type="text" placeholder="Type a message..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+  
+  <div style="margin-top: 20px;">
+    <input id="roomInput" type="text" placeholder="Enter new room" />
+    <button onclick="switchRoom()">Switch Room</button>
+  </div>
+  
   <script>
+
+
     const messagesDiv = document.getElementById('messages');
     const input = document.getElementById('messageInput');
     const onlineCount = document.getElementById('online');
+    const roomName = document.getElementById('roomName');
+    
     let onlineUsers = 0;
     const updateOnlineCount = () => {
       onlineCount.textContent = `Online: ${onlineUsers}`;
     };
     let username = prompt("Enter your name:");
+    let room = prompt("Enter room name:");
+    if (!room) room = "general";
+    roomName.textContent =  room || "general";
     if (!username) username = "Anonymous";
   
     const socket = new WebSocket('ws://localhost:8080/ws');
   
     socket.onopen = () => {
       addMessage(`✅ Connected as ${username}`);
+      socket.send(JSON.stringify({username,content: 'has joined the chat',room}));
     };
   
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       onlineUsers =  data.online;
+      roomName.textContent =  data.room;
       addMessage(`📨 ${data.username}: ${data.content}`);
+      console.log(data.username)
       updateOnlineCount()
     };
   
@@ -70,6 +87,20 @@
       messagesDiv.appendChild(p);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
+    function switchRoom() {
+    const newRoom = document.getElementById("roomInput").value;
+    if (newRoom && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({
+      type: "switchRoom",
+      room: newRoom,
+      username: username,
+      content: "",
+    }));
+    roomName.textContent =  newRoom;
+    messagesDiv.innerHTML = "";
+  }
+}
+
   </script>
   
 </body>
