@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Go WebSocket Echo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f9f9f9;
+    }
+    #messages {
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 300px;
+      overflow-y: auto;
+      background-color: #fff;
+    }
+    input, button {
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>🧪 WebSocket Echo Test</h2>
+  <h5 id="online">Online:</h5>
+  <div id="messages"></div>
+
+  <input id="messageInput" type="text" placeholder="Type a message..." />
+  <button onclick="sendMessage()">Send</button>
+
+  <script>
+    const messagesDiv = document.getElementById('messages');
+    const input = document.getElementById('messageInput');
+    const onlineCount = document.getElementById('online');
+    let onlineUsers = 0;
+    const updateOnlineCount = () => {
+      onlineCount.textContent = `Online: ${onlineUsers}`;
+    };
+    let username = prompt("Enter your name:");
+    if (!username) username = "Anonymous";
+  
+    const socket = new WebSocket('ws://localhost:8080/ws');
+  
+    socket.onopen = () => {
+      addMessage(`✅ Connected as ${username}`);
+    };
+  
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      onlineUsers =  data.online;
+      addMessage(`📨 ${data.username}: ${data.content}`);
+      updateOnlineCount()
+    };
+  
+    function sendMessage() {
+      const msg = input.value;
+      if (msg && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ username, content: msg }));
+        input.value = '';
+      }
+    }
+  
+    function addMessage(msg) {
+      const p = document.createElement("p");
+      p.textContent = msg;
+      messagesDiv.appendChild(p);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+  </script>
+  
+</body>
+</html>
